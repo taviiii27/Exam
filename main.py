@@ -22,53 +22,10 @@ def Poarta_fisiere_intrari(file_path, backup_folder, folder_entries):
                 with open(os.path.join(folder_entries,file), 'r') as fisier: #alatur fisierul in folderul corespunzator
                     data_access=fisier.read().split() #oferim acces
                 cursor.execute('INSERT INTO poarta_acces( `numar_poarta`,`tip_fisier`,data_acces`) VALUES (%s, %s, %s)' )(nume_poarta, extensie, data_access)
+                shutil.move(file_path,os.path.join(backup_folder,file))
                 conexiune.commit()
                 
         time.sleep(20)
 
 
-
-from flask import Flask, request, jsonify
-import mysql.connector
-
-app = Flask(__name__)
-def creare_tabela():
-    conn = mysql.connector.connect(host='localhost', user='root', password='root', database='virtuals')
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS poarta2 (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            data DATETIME NOT NULL,
-            sens VARCHAR(45) NOT NULL,
-            idPersoana INT NOT NULL,
-            idPoarta INT NOT NULL
-        )
-    """)
-    conn.commit()
-    conn.close()
-    
-creare_tabela()
-
-@app.route('/Poarta2', methods=['POST'])
-def JSONFile():
-    try:
-        input_data = request.json
-        for key in ['data', 'sens', 'idPersoana', 'idPoarta']:
-            if key not in input_data:
-                return jsonify({"eroare": f"valoare negăsită pentru cheia '{key}'!"}), 400
-        conn = mysql.connector.connect(host='localhost', user='root', password='root', database='virtuals')
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO poarta2 (data, sens, idPersoana, idPoarta)
-            VALUES (%s, %s, %s, %s)
-        """, (input_data['data'], input_data['sens'], input_data['idPersoana'], input_data['idPoarta']))
-        conn.commit()
-        conn.close()
-        return jsonify({"mesaj": "perfect, date adăugate!"}), 200
-
-    except Exception as e:
-        return jsonify({"eroare": f"ceva nu a mers cum trebuie: {str(e)}"}), 500
-
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
 
