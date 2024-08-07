@@ -32,9 +32,7 @@ from flask import Flask, request, jsonify
 import mysql.connector
 
 app = Flask(__name__)
-
-# Funcție pentru crearea tabelei dacă nu există
-def create_table():
+def creare_tabela():
     conn = mysql.connector.connect(host='localhost', user='root', password='root', database='virtuals')
     cursor = conn.cursor()
     cursor.execute("""
@@ -48,7 +46,8 @@ def create_table():
     """)
     conn.commit()
     conn.close()
-create_table()
+    
+creare_tabela()
 
 @app.route('/Poarta2', methods=['POST'])
 def JSONFile():
@@ -56,23 +55,19 @@ def JSONFile():
         input_data = request.json
         for key in ['data', 'sens', 'idPersoana', 'idPoarta']:
             if key not in input_data:
-                return jsonify({"eroare": f"Valoare negăsită pentru cheia '{key}'!"}), 400
-
-        # Conectează-te la baza de date
+                return jsonify({"eroare": f"valoare negăsită pentru cheia '{key}'!"}), 400
         conn = mysql.connector.connect(host='localhost', user='root', password='root', database='virtuals')
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO poarta2 (data, sens, idPersoana, idPoarta)
             VALUES (%s, %s, %s, %s)
         """, (input_data['data'], input_data['sens'], input_data['idPersoana'], input_data['idPoarta']))
-
-        # Confirmă schimbările și închide conexiunea
         conn.commit()
         conn.close()
-        return jsonify({"mesaj": "Perfect, date adăugate!"}), 200
+        return jsonify({"mesaj": "perfect, date adăugate!"}), 200
 
     except Exception as e:
-        return jsonify({"eroare": f"Ceva nu a mers cum trebuie: {str(e)}"}), 500
+        return jsonify({"eroare": f"ceva nu a mers cum trebuie: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
