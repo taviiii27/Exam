@@ -3,9 +3,6 @@ import json,os
 import time, mysql.connector,shutil#pt mmutare
 
 def Poarta_fisiere_intrari(file_path, backup_folder, folder_entries):
-    file_path='Poarta1.txt'
-    backup_folder='backup_intrari'
-    folder_entries='intrari'
     if not os.path.exists(backup_folder):
         os.makedirs(backup_folder)
     conexiune=mysql.connector.connect(host='localhost', user='root', password='root', database='in_outs')
