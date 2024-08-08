@@ -1,30 +1,73 @@
 from flask import Flask, request, jsonify
-import json,os
-import time, mysql.connector,shutil#pt mmutare
+import os
+import time, mysql.connector,shutil #pt mmutare
 
-def Poarta_fisiere_intrari(file_path, backup_folder, folder_entries):
-    file_path='Poarta1.txt'
-    backup_folder='backup_intrari'
-    folder_entries='intrari'
-    if not os.path.exists(backup_folder):
-        os.makedirs(backup_folder)
-    conexiune=mysql.connector.connect(host='localhost', user='root', password='root', database='in_outs')
-    cursor=conexiune.cursor()
-    cursor.execute("CREATE TABLE `in_outs`.`poarta_acces` ( `id` INT NOT NULL, `numar_poarta` VARCHAR(45) NULL,`tip_fisier` VARCHAR(45) NULL,`data_acces` DATETIME NULL,PRIMARY KEY (`id`));")
-    conexiune.commit()
-    while True:
-        entry_files=os.listdir(folder_entries)
+
+class Database:
+    def __init__(self, host, user, password, db):
+        self.host = host
+        self.user = user
+        self.password = password
+        self.db = db
+        self.connection = None
+        self.cursor = None
+    def conexiune(self):
+        self.connection=mysql.connector.connect(host='localhost', user='root',  password='root', database='users')
+        self.cursor=self.connection.cursor()
+    def executeConexiune(self, query, values=None):
+        self.conexiune()
+        if values:
+            self.cursor.execute(query, values)
+        else:
+            self.cursor.execute(query)
+        self.connection.commit()
+
+    def close(self):
+        if self.cursor:
+            self.cursor.close()
+        if self.connection:
+            self.connection.close()
+
+class ManagerFisiere():
+    def __init__(self, backup_folder, folder_entries):
+        self.backup_folder = backup_folder
+        self.folder_entries = folder_entries
+        if not os.path.exists(backup_folder):
+            os.makedirs(backup_folder)
+    def Filemanager(self,db):
+        entry_files=os.listdir(self.folder_entries)
         for file in entry_files:
-            file_path=os.path.join(backup_folder,file)
+            file_path=os.path.join(self.folder_entries,file)
             if os.path.isfile(file_path):
                 nume_poarta, extensie=os.path.splitext(file) 
-                nume_poarta=int(nume_poarta.replace,('Poarta', ' ')) #inlocuiesc poarta cu un numar
-                with open(os.path.join(folder_entries,file), 'r') as fisier: #alatur fisierul in folderul corespunzator
+                nume_poarta=int(nume_poarta.replace,('Poarta', '')) #inlocuiesc poarta cu un numar
+                with open(file_path, 'r') as fisier: #alatur fisierul in folderul corespunzator
                     data_access=fisier.read().split() #oferim acces
-                cursor.execute('INSERT INTO poarta_acces( `numar_poarta`,`tip_fisier`,data_acces`) VALUES (%s, %s, %s)' )(nume_poarta, extensie, data_access)
-                conexiune.commit()
-                
+                query='INSERT INTO poarta_acces( `numar_poarta`,`tip_fisier`,data_acces`) VALUES (%s, %s, %s)' 
+                values = (nume_poarta, extensie, ' '.join(data_access))
+                db.executeConexiune(query,values)
+                shutil.move(file_path,os.path.join(self.backup_folder,file))
+class Poarta_fisiere_intrari:
+    def __init__(self, backup_folder, folder_entries):
+        self.file_manager = ManagerFisiere(backup_folder, folder_entries)
+        self.db = Database(host='localhost', user='root', password='root', database='in_outs')
+        self.db.executeConexiune("CREATE TABLE IF NOT EXISTS `in_outs`.`poarta_acces` ( `id` INT NOT NULL, `numar_poarta` INT NOT NULL,`tip_fisier` VARCHAR(45) NOT NULL,`data_acces` DATETIME NOT NULL,PRIMARY KEY (`id`));")
+    def rulare(self):
+        self.file_manager.Filemanager(self.db)
         time.sleep(20)
+
+procesareFisier=Poarta_fisiere_intrari(backup_folder='backup', folder_entries='entries')
+app=Flask(__name__)
+@app.route('/files', methods=['GET'])
+def processFile():
+    try:
+        procesareFisier.rulare()
+        return jsonify({"mesaj":"functioneaza bine"}), 200
+    except Exception as e:
+        return jsonify({"eroare":"ceva nu a mers cum trb"}), 500
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5000, debug=True)
+
 
 
 
