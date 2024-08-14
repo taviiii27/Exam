@@ -1,47 +1,35 @@
-<<<<<<< HEAD
-from functie4 import *
+from ChiulangiiSiSilitori import *
+def main():
+    db_config = {
+        'host': 'localhost',
+        'user': 'root',
+        'password': 'root',
+        'database': 'virtuals'
+    }
+    
+    email_trimitator = 'petrucretu03@gmail.com'
+    email_password = os.getenv('EMAIL_PASSWORD')  
+    db = BazaDeDate(**db_config)
+    prezenta = Prezenta(db)
+    generator_rapoarte = GeneratorDeRapoarte('backup_reports')
+    trimite_notificari = TrimitereNotificari(email_trimitator, email_password)
 
-if __name__=="__main__":
+   
+    data_curenta = datetime.now().strftime('%Y-%m-%d')
+    ore_lucrate = prezenta.oreDeLucru(data_curenta)
+    ore_necesare = 8  
+    angajatiNotificati, angajatiSilitori = prezenta.Notificari(ore_lucrate, ore_necesare)
 
-    db = BazaDeDate(host='localhost', password='root', user='root', database='virtuals') #din virtuals luam majoritatea datelor 
-    procesareInfoBazadate=InitiereBazaDate(db)
-    generareRapoarte=generatorDeRapoarte(folder_backup='backup')
-    generatorNotificari = trimitereNotificari(db)
+    
+    generator_rapoarte.generareRapoarte(angajatiNotificati, angajatiSilitori)
 
 
-    today=datetime.now.strftime('%Y-%m-%d')
-    ore_lucrate=procesareInfoBazadate.calculate_ore_lucrate(today)
-    angajatiNotificati=procesareInfoBazadate.get_angajatiNotificati(today)
-    if angajatiNotificati:
-        generatorDeRapoarte.generareRapoarte(angajatiNotificati)
-        trimitereNotificari.trimiteMail(angajatiNotificati)
-=======
-from flask import Flask, request, jsonify
-import json,os
-import time, mysql.connector,shutil#pt mmutare
+    trimite_notificari.notificareAngajat(angajatiNotificati, angajatiSilitori)
 
-def Poarta_fisiere_intrari(file_path, backup_folder, folder_entries):
-    if not os.path.exists(backup_folder):
-        os.makedirs(backup_folder)
-    conexiune=mysql.connector.connect(host='localhost', user='root', password='root', database='in_outs')
-    cursor=conexiune.cursor()
-    cursor.execute("CREATE TABLE `in_outs`.`poarta_acces` ( `id` INT NOT NULL, `numar_poarta` VARCHAR(45) NULL,`tip_fisier` VARCHAR(45) NULL,`data_acces` DATETIME NULL,PRIMARY KEY (`id`));")
-    conexiune.commit()
-    while True:
-        entry_files=os.listdir(folder_entries)
-        for file in entry_files:
-            file_path=os.path.join(backup_folder,file)
-            if os.path.isfile(file_path):
-                nume_poarta, extensie=os.path.splitext(file) 
-                nume_poarta=int(nume_poarta.replace,('Poarta', ' ')) #inlocuiesc poarta cu un numar
-                with open(os.path.join(folder_entries,file), 'r') as fisier: #alatur fisierul in folderul corespunzator
-                    data_access=fisier.read().split() #oferim acces
-                cursor.execute('INSERT INTO poarta_acces( `numar_poarta`,`tip_fisier`,data_acces`) VALUES (%s, %s, %s)' )(nume_poarta, extensie, data_access)
-                shutil.move(file_path,os.path.join(backup_folder,file))
-                conexiune.commit()
-                
-        time.sleep(20)
+if __name__ == "__main__":
+    main()
 
 
 
->>>>>>> origin/main
+
+
